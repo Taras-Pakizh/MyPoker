@@ -6,24 +6,25 @@ using System.Threading.Tasks;
 
 namespace MyPoker.Logic
 {
-    class HandRank : IComparable<HandRank>
+    public class HandRank : IComparable<HandRank>
     {
         //Vars
         private readonly Combination combination;
         private readonly Card highCard;
 
         //Constructor
+        public HandRank(){}
         public HandRank(Card[] hand)
         {
             var result = Parse_RoyalStraightFlush_Flush(hand);
             if (result.Item1 == Combination.None_Found)
                 result = ParseStraight(hand);
-            if ((int)result.Item1 > 1)
-            {
-                var check = ParsePairs(hand);
-                if (result.Item1 > check.Item1)
-                    result = check;
-            }
+            //if ((int)result.Item1 > 1)
+            //{
+            //    var check = ParsePairs(hand);
+            //    if (result.Item1 > check.Item1)
+            //        result = check;
+            //}
             combination = result.Item1;
             highCard = result.Item2;
         }
@@ -35,7 +36,7 @@ namespace MyPoker.Logic
             else return highCard.CompareTo(other.highCard);
         }
 
-        private (Combination, Card) Parse_RoyalStraightFlush_Flush(Card[] hand)
+        public (Combination, Card) Parse_RoyalStraightFlush_Flush(Card[] hand)
         {
             Combination result = Combination.None_Found;
             Card flushHighCard = null;
@@ -59,7 +60,34 @@ namespace MyPoker.Logic
         }
         private (Combination, Card) ParseStraight(Card[] hand)
         {
-            
+            Combination result = Combination.None_Found;
+            Card straightHighCard = null;
+            Array.Sort(hand);
+            hand = hand.Reverse().ToArray();
+            Card item = hand.First();
+            int start = 0, length = 1;
+            for(int i = 1; i < hand.Length; ++i)
+            {
+                if(hand[i].type == item.type + 1) ++length;
+                else
+                {
+                    length = 1;
+                    start = i;
+                }
+                item = hand[i];
+                if(length == 4 && item.type == CardType.Five && hand.Contains(new Card(CardSuit.Club, CardType.Ace)))
+                {
+                    result = Combination.Straight;
+                    straightHighCard = hand.First(x => x.type == CardType.Ace);
+                    break;
+                }
+            }
+            if(length >= 5)
+            {
+                result = Combination.Straight;
+                straightHighCard = hand[start + length - 1];
+            }
+            return (result, straightHighCard);
         }
         private (Combination, Card) ParsePairs(Card[] hand)
         {

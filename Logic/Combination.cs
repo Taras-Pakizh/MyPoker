@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MyPoker.Logic
 {
-    enum Combination
+    public enum Combination
     {
         Royal_flush = 0,
         Straight_flush,

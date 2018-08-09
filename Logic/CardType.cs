@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MyPoker.Logic
 {
-    enum CardType
+    public enum CardType
     {
         Two = 2,
         Three = 3,

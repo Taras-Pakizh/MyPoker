@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MyPoker.Logic
 {
-    class Card:IComparable<Card>
+    public class Card:IComparable<Card>
     {
         //Properties
         public CardType type { get; }

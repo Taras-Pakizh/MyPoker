@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MyPoker.Logic
 {
-    enum CardSuit
+    public enum CardSuit
     {
         Club = 0, // ♣
         Diamond = 1, // ♦
