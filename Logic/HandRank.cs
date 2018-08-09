@@ -11,6 +11,7 @@ namespace MyPoker.Logic
         //Vars
         private readonly Combination combination;
         private readonly Card highCard;
+        private readonly Card[] SortedHand;
 
         //Constructor
         public HandRank(){}
@@ -19,12 +20,12 @@ namespace MyPoker.Logic
             var result = Parse_RoyalStraightFlush_Flush(hand);
             if (result.Item1 == Combination.None_Found)
                 result = ParseStraight(hand);
-            //if ((int)result.Item1 > 1)
-            //{
-            //    var check = ParsePairs(hand);
-            //    if (result.Item1 > check.Item1)
-            //        result = check;
-            //}
+            if ((int)result.Item1 > 1)
+            {
+                var check = ParsePairs(hand);
+                if (result.Item1 > check.Item1)
+                    result = check;
+            }
             combination = result.Item1;
             highCard = result.Item2;
         }
@@ -91,10 +92,35 @@ namespace MyPoker.Logic
         }
         private (Combination, Card) ParsePairs(Card[] hand)
         {
-            //Pairs
-            Dictionary<Card, int> counts = new Dictionary<Card, int>();
-            foreach (var card in hand)
-                counts.Add(card, hand.Count(x => x == card));
+            Combination result = Combination.None_Found;
+            Card PairsHighCard = null;
+            Dictionary<CardType, int> dublicates = new Dictionary<CardType, int>();
+            foreach(var card in hand)
+            {
+                if (dublicates.ContainsKey(card.type))
+                    ++dublicates[card.type];
+                else dublicates.Add(card.type, 1);
+            }
+            if (dublicates.ContainsValue(4))
+            {
+                result = Combination.Quads;
+                PairsHighCard = new Card(CardSuit.Club, dublicates.Where(x => x.Value == 4).First().Key);
+            }
+            else if (dublicates.ContainsValue(3))
+            {
+                if (dublicates.ContainsValue(2))
+                    result = Combination.Full_house;
+                else result = Combination.Set;
+                PairsHighCard = new Card(CardSuit.Club, dublicates.Where(x => x.Value == 3).Max(x => x.Key));
+            }
+            else if(dublicates.ContainsValue(2))
+            {
+                var pairs = dublicates.Where(x => x.Value == 2).Select(x => x.Key).ToArray();
+                if (pairs.Length == 1) result = Combination.One_Pair;
+                else result = Combination.Two_Pairs;
+                PairsHighCard = new Card(CardSuit.Club, pairs.Max());
+            }
+            return (result, PairsHighCard);
         }
     }
 }
