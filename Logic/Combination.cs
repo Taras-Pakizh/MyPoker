@@ -17,6 +17,7 @@ namespace MyPoker.Logic
         Set,
         Two_Pairs,
         One_Pair,
-        High_Card
+        High_Card,
+        None_Found = -1
     }
 }
