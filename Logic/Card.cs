@@ -19,6 +19,11 @@ namespace MyPoker.Logic
             suit = _suit;
         }
 
+        /// <summary>
+        /// Compares only type of card
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns> Less than zero = Upper type </returns>
         public int CompareTo(Card other)
         {
             return -((int)type).CompareTo((int)other.type);
