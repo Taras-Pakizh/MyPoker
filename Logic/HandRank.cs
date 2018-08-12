@@ -28,15 +28,27 @@ namespace MyPoker.Logic
             }
             combination = result.Item1;
             highCard = result.Item2;
+            Array.Sort(hand);
+            SortedHand = hand;
         }
 
+        //Comparable interface
         public int CompareTo(HandRank other)
         {
             if ((int)combination < (int)other.combination) return -1;
             else if ((int)combination > (int)other.combination) return 1;
-            else return highCard.CompareTo(other.highCard);
+            else
+            {
+                for(int i = 0, result; i < SortedHand.Length; ++i)
+                {
+                    result = this.SortedHand[i].CompareTo(other.SortedHand[i]);
+                    if (result != 0) return result;
+                }
+                return 0;
+            }
         }
 
+        //Parsers
         public (Combination, Card) Parse_RoyalStraightFlush_Flush(Card[] hand)
         {
             Combination result = Combination.None_Found;
@@ -51,15 +63,17 @@ namespace MyPoker.Logic
                 var flushHand = hand.Where(x => x.suit == flushSuit).OrderByDescending(x => (int)x.type).ToArray();
                 result = Combination.Flush;
                 flushHighCard = flushHand.First();
-                if (ParseStraight(flushHand).Item1 != Combination.None_Found)
+                var straightParseResult = ParseStraight(flushHand);
+                if (straightParseResult.Item1 != Combination.None_Found)
                 {
-                    if (flushHighCard.type == CardType.Ace) result = Combination.Royal_flush;
+                    if (straightParseResult.Item2.type == CardType.Ace) result = Combination.Royal_flush;
                     else result = Combination.Straight_flush;
+                    flushHighCard = straightParseResult.Item2;
                 }
             }
             return (result, flushHighCard);
         }
-        private (Combination, Card) ParseStraight(Card[] hand)
+        public (Combination, Card) ParseStraight(Card[] hand)
         {
             Combination result = Combination.None_Found;
             Card straightHighCard = null;
@@ -69,12 +83,13 @@ namespace MyPoker.Logic
             int start = 0, length = 1;
             for(int i = 1; i < hand.Length; ++i)
             {
-                if(hand[i].type == item.type + 1) ++length;
-                else
+                if (hand[i].type == item.type + 1) ++length;
+                else if (length < 5)
                 {
                     length = 1;
                     start = i;
                 }
+                else break;
                 item = hand[i];
                 if(length == 4 && item.type == CardType.Five && hand.Contains(new Card(CardSuit.Club, CardType.Ace)))
                 {
@@ -90,7 +105,7 @@ namespace MyPoker.Logic
             }
             return (result, straightHighCard);
         }
-        private (Combination, Card) ParsePairs(Card[] hand)
+        public (Combination, Card) ParsePairs(Card[] hand)
         {
             Combination result = Combination.None_Found;
             Card PairsHighCard = null;
