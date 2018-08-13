@@ -20,10 +20,10 @@ namespace MyPoker.Logic
             var result = Parse_RoyalStraightFlush_Flush(hand);
             if (result.Item1 == Combination.None_Found)
                 result = Parse_Straight(hand);
-            if (result.Item1 > Combination.Straight_flush)
+            if (result.Item1 == Combination.None_Found || result.Item1 > Combination.Straight_flush)
             {
                 var check = Parse_Dublicates(hand);
-                if (result.Item1 > check.Item1)
+                if (result.Item1 == Combination.None_Found || result.Item1 > check.Item1)
                     result = check;
             }
             combination = result.Item1;
@@ -33,6 +33,8 @@ namespace MyPoker.Logic
         //Comparable interface
         public int CompareTo(HandRank other)
         {
+            if (combination == Combination.None_Found || other.combination == Combination.None_Found)
+                throw new CombinationNotFound();
             if (combination < other.combination) return -1;
             else if (combination > other.combination) return 1;
             else
@@ -182,5 +184,6 @@ namespace MyPoker.Logic
         }
 
         class NotEnoughCards : Exception { }
+        class CombinationNotFound : Exception { }
     }
 }
