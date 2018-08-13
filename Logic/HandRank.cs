@@ -10,33 +10,31 @@ namespace MyPoker.Logic
     {
         //Vars
         private readonly Combination combination;
-        private readonly Card highCard;
         private readonly Card[] SortedHand;
 
         //Constructor
         public HandRank(){}
         public HandRank(Card[] hand)
         {
+            if (hand.Length < 5) throw new NotEnoughCards();
             var result = Parse_RoyalStraightFlush_Flush(hand);
             if (result.Item1 == Combination.None_Found)
                 result = ParseStraight(hand);
-            if ((int)result.Item1 > 1)
+            if (result.Item1 > Combination.Straight_flush)
             {
                 var check = ParsePairs(hand);
                 if (result.Item1 > check.Item1)
                     result = check;
             }
             combination = result.Item1;
-            highCard = result.Item2;
-            Array.Sort(hand);
-            SortedHand = hand;
+            SortedHand = result.Item2;
         }
 
         //Comparable interface
         public int CompareTo(HandRank other)
         {
-            if ((int)combination < (int)other.combination) return -1;
-            else if ((int)combination > (int)other.combination) return 1;
+            if (combination < other.combination) return -1;
+            else if (combination > other.combination) return 1;
             else
             {
                 for(int i = 0, result; i < SortedHand.Length; ++i)
@@ -49,10 +47,10 @@ namespace MyPoker.Logic
         }
 
         //Parsers
-        public (Combination, Card) Parse_RoyalStraightFlush_Flush(Card[] hand)
+        public (Combination, Card[]) Parse_RoyalStraightFlush_Flush(Card[] hand)
         {
             Combination result = Combination.None_Found;
-            Card flushHighCard = null;
+            Card[] sortedHand = new Card[5];
             Dictionary<CardSuit, int> suits = new Dictionary<CardSuit, int>();
             foreach (var suit in new CardSuit[] { CardSuit.Club, CardSuit.Diamond, CardSuit.Heart, CardSuit.Spade })
                 suits.Add(suit, hand.Count(x => x.suit == suit));
@@ -62,53 +60,54 @@ namespace MyPoker.Logic
                 CardSuit flushSuit = suits.Where(x => x.Value == maxValue).Single().Key;
                 var flushHand = hand.Where(x => x.suit == flushSuit).OrderByDescending(x => (int)x.type).ToArray();
                 result = Combination.Flush;
-                flushHighCard = flushHand.First();
+                sortedHand = flushHand.Take(sortedHand.Length).ToArray();
                 var straightParseResult = ParseStraight(flushHand);
                 if (straightParseResult.Item1 != Combination.None_Found)
                 {
                     if (straightParseResult.Item2.type == CardType.Ace) result = Combination.Royal_flush;
                     else result = Combination.Straight_flush;
-                    flushHighCard = straightParseResult.Item2;
+                    sortedHand = straightParseResult.Item2;
                 }
             }
-            return (result, flushHighCard);
+            return (result, sortedHand);
         }
-        public (Combination, Card) ParseStraight(Card[] hand)
+        public (Combination, Card[]) ParseStraight(Card[] hand)
         {
             Combination result = Combination.None_Found;
-            Card straightHighCard = null;
+            List<Card> sortedHand = new List<Card>();
             Array.Sort(hand);
             hand = hand.Reverse().ToArray();
             Card item = hand.First();
-            int start = 0, length = 1;
+            sortedHand.Add(hand[0]);
             for(int i = 1; i < hand.Length; ++i)
             {
-                if (hand[i].type == item.type + 1) ++length;
-                else if (length < 5)
+                if (hand[i].type == item.type + 1) sortedHand.Add(hand[i]);
+                else if (sortedHand.Count < 5)
                 {
-                    length = 1;
-                    start = i;
+                    sortedHand.Clear();
+                    sortedHand.Add(hand[i]);
                 }
                 else break;
                 item = hand[i];
-                if(length == 4 && item.type == CardType.Five && hand.Contains(new Card(CardSuit.Club, CardType.Ace)))
+                if(sortedHand.Count == 4 && item.type == CardType.Five && hand.Contains(new Card(CardSuit.Club, CardType.Ace)))
                 {
                     result = Combination.Straight;
-                    straightHighCard = hand.First(x => x.type == CardType.Ace);
+                    sortedHand = sortedHand.OrderByDescending(x=>x.type).ToList();
+                    sortedHand.Add(hand.First(x => x.type == CardType.Ace));
                     break;
                 }
             }
-            if(length >= 5)
+            if(sortedHand.Count >= 5)
             {
                 result = Combination.Straight;
-                straightHighCard = hand[start + length - 1];
+                sortedHand = sortedHand.OrderByDescending(x => x.type).Take(5).ToList();
             }
-            return (result, straightHighCard);
+            return (result, sortedHand.ToArray());
         }
-        public (Combination, Card) ParsePairs(Card[] hand)
+        public (Combination, Card[]) ParsePairs(Card[] hand)
         {
             Combination result = Combination.None_Found;
-            Card PairsHighCard = null;
+            List<Card> sortedHand = new List<Card>();
             Dictionary<CardType, int> dublicates = new Dictionary<CardType, int>();
             foreach(var card in hand)
             {
@@ -119,23 +118,41 @@ namespace MyPoker.Logic
             if (dublicates.ContainsValue(4))
             {
                 result = Combination.Quads;
-                PairsHighCard = new Card(CardSuit.Club, dublicates.Where(x => x.Value == 4).First().Key);
+                sortedHand.AddRange(hand.Where(x => x.type == dublicates.Where(y => y.Value == 4).First().Key));
+                Card card = hand.Max();
+                if (card.type != sortedHand[0].type)
+                    sortedHand.Add(card);
+                else sortedHand.Add(hand.Where(x => x.type != sortedHand[0].type).Max());
             }
             else if (dublicates.ContainsValue(3))
             {
+                CardType set = dublicates.Where(x => x.Value == 3).Max(x => x.Key);
+                sortedHand.AddRange(hand.Where(x => x.type == set));
                 if (dublicates.ContainsValue(2))
+                {
                     result = Combination.Full_house;
-                else result = Combination.Set;
-                PairsHighCard = new Card(CardSuit.Club, dublicates.Where(x => x.Value == 3).Max(x => x.Key));
+                    CardType pair = dublicates.Where(x => x.Value == 2).Max(x => x.Key);
+                    sortedHand.AddRange(hand.Where(x => x.type == pair));
+                }
+                else
+                {
+                    result = Combination.Set;
+                    sortedHand.AddRange(hand.Where(x => x.type != set).OrderByDescending(x => x.type).Take(2));
+                }
             }
             else if(dublicates.ContainsValue(2))
             {
-                var pairs = dublicates.Where(x => x.Value == 2).Select(x => x.Key).ToArray();
+                var pairs = dublicates.Where(x => x.Value == 2).Select(x => x.Key).OrderByDescending(x=>x).Take(2).ToArray();
+                var rest = hand.Where(x => x.type != pairs[0]).Where(y => y.type != pairs[1]).OrderByDescending(x => x).ToArray();
                 if (pairs.Length == 1) result = Combination.One_Pair;
                 else result = Combination.Two_Pairs;
-                PairsHighCard = new Card(CardSuit.Club, pairs.Max());
+                foreach (var type in pairs)
+                    sortedHand.AddRange(hand.Where(x => x.type == type));
+                sortedHand.AddRange(rest.Take(5 - sortedHand.Count));
             }
-            return (result, PairsHighCard);
+            return (result, sortedHand.ToArray());
         }
+
+        class NotEnoughCards : Exception { }
     }
 }
