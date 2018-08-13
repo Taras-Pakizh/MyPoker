@@ -28,5 +28,12 @@ namespace MyPoker.Logic
         {
             return -((int)type).CompareTo((int)other.type);
         }
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.Append(suit.ToString() + " " + type.ToString());
+            return builder.ToString();
+        }
     }
 }

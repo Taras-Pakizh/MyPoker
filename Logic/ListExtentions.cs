@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MyPoker.Logic
 {
-    static class ListExtentions
+    public static class ListExtentions
     {
         public static List<Card> Shuffle(this List<Card> list)
         {
