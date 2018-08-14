@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MyPoker.Logic
+namespace MyPoker.Game
 {
-    class Dealer
+    class GameContext
     {
     }
 }

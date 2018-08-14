@@ -6,14 +6,12 @@ using System.Threading.Tasks;
 
 namespace MyPoker.Logic
 {
-    public class HandRank : IComparable<HandRank>
+    public class HandRank : AbstractHandRank
     {
-        //Vars
         private readonly Combination combination;
-        private readonly Card[] SortedHand;
+        private readonly IReadOnlyList<Card> SortedHand;
 
         //Constructor
-        public HandRank(){}
         public HandRank(Card[] hand)
         {
             if (hand.Length < 5) throw new NotEnoughCards();
@@ -28,24 +26,6 @@ namespace MyPoker.Logic
             }
             combination = result.Item1;
             SortedHand = result.Item2;
-        }
-
-        //Comparable interface
-        public int CompareTo(HandRank other)
-        {
-            if (combination == Combination.None_Found || other.combination == Combination.None_Found)
-                throw new CombinationNotFound();
-            if (combination < other.combination) return -1;
-            else if (combination > other.combination) return 1;
-            else
-            {
-                for(int i = 0, result; i < SortedHand.Length; ++i)
-                {
-                    result = this.SortedHand[i].CompareTo(other.SortedHand[i]);
-                    if (result != 0) return result;
-                }
-                return 0;
-            }
         }
 
         //Parsers
@@ -183,7 +163,14 @@ namespace MyPoker.Logic
             return (result, sortedHand.ToArray());
         }
 
+        protected override void GetValues()
+        {
+            if (SortedHand == null)
+                throw new Exception("Not Initialized");
+            _combination = combination;
+            _sortedHand = SortedHand;
+        }
+
         class NotEnoughCards : Exception { }
-        class CombinationNotFound : Exception { }
     }
 }
